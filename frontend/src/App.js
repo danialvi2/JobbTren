@@ -9,12 +9,13 @@ function App() {
   const [interview, setInterview] = useState(null);
   const [userAnswers, setUserAnswers] = useState([]);
 
-  // UI-flow: har brukeren startet prosessen?
   const [hasStarted, setHasStarted] = useState(false);
 
   const api = process.env.REACT_APP_API_URL;
 
-  // --- analyze request ---
+  /** ------------------------------
+   *  ANALYZE
+   * ------------------------------ */
   const handleAnalyze = async () => {
     if (!cv || !jobUrl) return;
 
@@ -27,10 +28,15 @@ function App() {
         method: "POST",
         body: form,
       });
+
       const data = await res.json();
 
-      // ny analyse nuller tidligere intervju
-      setAnalysis(data);
+      setAnalysis({
+        matchScore: data.matchScore ?? 0,
+        skillsMatch: data.skillsMatch ?? [],
+        missingSkills: data.missingSkills ?? [],
+      });
+
       setInterview(null);
       setUserAnswers([]);
     } catch (err) {
@@ -38,29 +44,22 @@ function App() {
     }
   };
 
-  // --- interview request ---
+  /** ------------------------------
+   *  INTERVIEW GENERATION
+   * ------------------------------ */
   const handleInterview = async () => {
     if (!analysis) return;
 
-    const nonEmptyProjects = projects.filter(
-      (p) => p.trim() !== ""
-    );
+    const nonEmptyProjects = projects.filter((p) => p.trim() !== "");
     if (nonEmptyProjects.length === 0) return;
 
     const form = new FormData();
     form.append("cv", cv);
     form.append("jobUrl", jobUrl);
-    form.append("projects", JSON.stringify(projects));
+    form.append("projects", JSON.stringify(nonEmptyProjects));
 
-    // sender analyze-resultater videre til backend
-    form.append(
-      "missingSkills",
-      JSON.stringify(analysis.missingSkills)
-    );
-    form.append(
-      "skillsMatch",
-      JSON.stringify(analysis.skillsMatch)
-    );
+    form.append("missingSkills", JSON.stringify(analysis.missingSkills));
+    form.append("skillsMatch", JSON.stringify(analysis.skillsMatch));
     form.append("matchScore", analysis.matchScore);
 
     try {
@@ -68,18 +67,17 @@ function App() {
         method: "POST",
         body: form,
       });
+
       const data = await res.json();
 
       setInterview(data);
-      setUserAnswers(
-        (data.questions || []).map(() => "")
-      );
+      setUserAnswers((data.questions || []).map(() => ""));
     } catch (err) {
       console.log("Interview error:", err);
     }
   };
 
-  // prosjekt-editor
+  /** ------------------------------ */
   const updateProject = (idx, value) => {
     const updated = [...projects];
     updated[idx] = value;
@@ -93,15 +91,10 @@ function App() {
     setProjects(projects.filter((_, i) => i !== idx));
   };
 
-  // brukerens egne intervjusvar
   const updateUserAnswer = (index, text) => {
     const updated = [...userAnswers];
     updated[index] = text;
     setUserAnswers(updated);
-  };
-
-  const handleStart = () => {
-    setHasStarted(true);
   };
 
   const handleReset = () => {
@@ -113,23 +106,18 @@ function App() {
     setJobUrl("");
   };
 
-  // --- UI ---
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#f5f5f7",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+        background: "linear-gradient(180deg,#1e1b4b,#0f172a)",
+        color: "white",
+        fontFamily: "Inter, system-ui",
+        paddingBottom: "6rem",
       }}
     >
-      <div
-        style={{
-          maxWidth: "960px",
-          margin: "0 auto",
-          padding: "2.5rem 1.5rem 3rem",
-        }}
-      >
-        {/* Header */}
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem" }}>
+        {/* HEADER */}
         <header
           style={{
             display: "flex",
@@ -144,57 +132,34 @@ function App() {
             <button
               onClick={handleReset}
               style={{
+                background: "#f87171",
+                border: "none",
                 padding: "8px 14px",
                 borderRadius: "999px",
-                border: "1px solid #ddd",
-                background: "#fff",
                 cursor: "pointer",
-                fontSize: "0.9rem",
+                color: "white",
               }}
             >
-              Reset til ny stilling
+              Ny analyse
             </button>
           )}
         </header>
 
-        {/* SCENE 1 – Landing med rund knapp */}
+        {/* LANDING KNAPP */}
         {!hasStarted && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "4rem 1rem 5rem",
-              textAlign: "center",
-            }}
-          >
-            <p
-              style={{
-                maxWidth: "420px",
-                marginBottom: "2rem",
-                color: "#555",
-              }}
-            >
-              Tren på ekte intervjusituasjoner basert på din CV og en
-              konkret stillingsannonse. Trykk under for å starte.
-            </p>
-
+          <div style={{ textAlign: "center", paddingTop: "4rem" }}>
             <button
-              onClick={handleStart}
+              onClick={() => setHasStarted(true)}
               style={{
                 width: "140px",
                 height: "140px",
                 borderRadius: "50%",
-                border: "none",
-                background:
-                  "linear-gradient(135deg, #ffb347, #ff7b54)",
-                color: "#fff",
                 fontSize: "1.1rem",
-                fontWeight: 600,
+                fontWeight: "bold",
+                background: "linear-gradient(135deg,#a855f7,#ec4899)",
+                border: "none",
+                color: "white",
                 cursor: "pointer",
-                boxShadow:
-                  "0 10px 25px rgba(0,0,0,0.15)",
               }}
             >
               Start analyse
@@ -202,361 +167,169 @@ function App() {
           </div>
         )}
 
-        {/* SCENE 2+ – CV + URL + Analyze alltid synlig etter start */}
+        {/* INPUT FORM */}
         {hasStarted && (
           <section
             style={{
-              background: "#ffffff",
-              borderRadius: "18px",
-              padding: "1.5rem 1.5rem 1.75rem",
-              boxShadow:
-                "0 10px 25px rgba(15, 23, 42, 0.06)",
-              marginBottom: "1.75rem",
+              background: "rgba(255,255,255,0.1)",
+              padding: "1.5rem",
+              borderRadius: "16px",
+              marginBottom: "1.5rem",
             }}
           >
-            <h2
+            <h2>Steg 1: CV og stilling</h2>
+
+            <label>Last opp CV (PDF)</label>
+            <input
+              type="file"
+              onChange={(e) => setCv(e.target.files[0] || null)}
+            />
+
+            <label style={{ marginTop: "1rem", display: "block" }}>
+              Stillingslink
+            </label>
+            <input
+              type="text"
+              placeholder="https://finn.no/..."
+              value={jobUrl}
+              onChange={(e) => setJobUrl(e.target.value)}
               style={{
-                marginTop: 0,
-                marginBottom: "0.75rem",
-                fontSize: "1.15rem",
+                width: "100%",
+                padding: "10px",
+                borderRadius: "10px",
+                marginTop: "4px",
+              }}
+            />
+
+            <button
+              onClick={handleAnalyze}
+              disabled={!cv || !jobUrl}
+              style={{
+                marginTop: "1rem",
+                padding: "10px 18px",
+                borderRadius: "999px",
+                background:
+                  !cv || !jobUrl
+                    ? "gray"
+                    : "linear-gradient(135deg,#6366f1,#4f46e5)",
+                border: "none",
+                cursor: "pointer",
+                color: "white",
               }}
             >
-              Steg 1: CV og stilling
-            </h2>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.75rem",
-                marginTop: "0.5rem",
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.9rem",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Last opp CV (PDF)
-                </label>
-                <input
-                  type="file"
-                  onChange={(e) =>
-                    setCv(e.target.files[0] || null)
-                  }
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.9rem",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  Lim inn lenke til stillingsannonsen
-                </label>
-                <input
-                  type="text"
-                  placeholder="https://www.finn.no/job/..."
-                  value={jobUrl}
-                  onChange={(e) =>
-                    setJobUrl(e.target.value)
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid #d0d0d5",
-                    fontSize: "0.95rem",
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "0.75rem",
-                  marginTop: "0.5rem",
-                }}
-              >
-                <button
-                  onClick={handleAnalyze}
-                  disabled={!cv || !jobUrl}
-                  style={{
-                    padding: "10px 18px",
-                    borderRadius: "999px",
-                    border: "none",
-                    fontSize: "0.95rem",
-                    fontWeight: 500,
-                    cursor:
-                      !cv || !jobUrl
-                        ? "not-allowed"
-                        : "pointer",
-                    background:
-                      !cv || !jobUrl
-                        ? "#d4d4d8"
-                        : "linear-gradient(135deg,#2563eb,#1d4ed8)",
-                    color: "#fff",
-                  }}
-                >
-                  Analyser CV mot stillingen
-                </button>
-              </div>
-            </div>
+              Analyser CV
+            </button>
           </section>
         )}
 
-        {/* SCENE 3 – Analyse resultat */}
+        {/* ANALYSE RESULTAT */}
         {hasStarted && analysis && (
-          <section
-            style={{
-              background: "#ffffff",
-              borderRadius: "18px",
-              padding: "1.5rem 1.75rem 1.5rem",
-              boxShadow:
-                "0 10px 25px rgba(15, 23, 42, 0.06)",
-              marginBottom: "1.75rem",
-            }}
-          >
-            <h2
+          <>
+            <section
               style={{
-                marginTop: 0,
-                marginBottom: "0.5rem",
-                fontSize: "1.15rem",
+                background: "rgba(255,255,255,0.1)",
+                padding: "1.5rem",
+                borderRadius: "16px",
+                marginBottom: "1.5rem",
               }}
             >
-              Steg 2: Analyse resultat
-            </h2>
+              <h2>Match: {analysis.matchScore}%</h2>
 
-            <p
-              style={{
-                marginTop: 0,
-                marginBottom: "0.75rem",
-              }}
-            >
-              <strong>Jobbmatch:</strong>{" "}
-              {analysis.matchScore}%
-            </p>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: "1rem",
-              }}
-            >
-              <div>
-                <h3
-                  style={{
-                    marginBottom: "0.4rem",
-                    fontSize: "0.98rem",
-                  }}
-                >
-                  Matchende styrker
-                </h3>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "0.35rem",
-                  }}
-                >
-                  {analysis.skillsMatch?.map((s) => (
+              <h3>Matchende skills</h3>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                {analysis.skillsMatch.length > 0 ? (
+                  analysis.skillsMatch.map((s) => (
                     <span
                       key={s}
                       style={{
-                        padding:
-                          "4px 8px",
-                        borderRadius:
-                          "999px",
-                        background:
-                          "#e0f2fe",
-                        fontSize:
-                          "0.85rem",
+                        background: "rgba(34,197,94,0.3)",
+                        padding: "4px 8px",
+                        borderRadius: "999px",
                       }}
                     >
                       {s}
                     </span>
-                  ))}
-                  {(!analysis.skillsMatch ||
-                    analysis.skillsMatch
-                      .length === 0) && (
-                    <span
-                      style={{
-                        fontSize:
-                          "0.85rem",
-                        color: "#6b7280",
-                      }}
-                    >
-                      Ingen matchede
-                      skills funnet.
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h3
-                  style={{
-                    marginBottom: "0.4rem",
-                    fontSize: "0.98rem",
-                  }}
-                >
-                  Manglende skills
-                </h3>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "0.35rem",
-                  }}
-                >
-                  {analysis.missingSkills?.map(
-                    (s) => (
-                      <span
-                        key={s}
-                        style={{
-                          padding:
-                            "4px 8px",
-                          borderRadius:
-                            "999px",
-                          background:
-                            "#fee2e2",
-                          fontSize:
-                            "0.85rem",
-                        }}
-                      >
-                        {s}
-                      </span>
-                    )
-                  )}
-                  {(!analysis.missingSkills ||
-                    analysis.missingSkills
-                      .length === 0) && (
-                    <span
-                      style={{
-                        fontSize:
-                          "0.85rem",
-                        color: "#6b7280",
-                      }}
-                    >
-                      Ingen tydelige hull
-                      i kravene.
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* SCENE 3.5 – Prosjekt-input (etter analyse) */}
-        {hasStarted && analysis && (
-          <section
-            style={{
-              background: "#ffffff",
-              borderRadius: "18px",
-              padding: "1.5rem 1.75rem 1.75rem",
-              boxShadow:
-                "0 10px 25px rgba(15, 23, 42, 0.06)",
-              marginBottom: "1.75rem",
-            }}
-          >
-            <h2
-              style={{
-                marginTop: 0,
-                marginBottom: "0.5rem",
-                fontSize: "1.15rem",
-              }}
-            >
-              Steg 3: Prosjekter
-            </h2>
-
-            <p
-              style={{
-                fontSize: "0.92rem",
-                color: "#4b5563",
-                marginTop: 0,
-                marginBottom: "0.75rem",
-              }}
-            >
-              Skriv én eller flere prosjekter du har jobbet
-              med. JobbTren bruker disse for å bygge
-              konkrete intervjuhistorier.
-            </p>
-
-            {projects.map((p, idx) => (
-              <div
-                key={idx}
-                style={{ marginBottom: "1rem" }}
-              >
-                <textarea
-                  placeholder="Beskriv et prosjekt du har jobbet med..."
-                  value={p}
-                  onChange={(e) =>
-                    updateProject(
-                      idx,
-                      e.target.value
-                    )
-                  }
-                  style={{
-                    width: "100%",
-                    minHeight: "110px",
-                    borderRadius: "10px",
-                    border: "1px solid #d4d4d8",
-                    padding: "10px 12px",
-                    fontSize: "0.95rem",
-                  }}
-                />
-                {projects.length > 1 && (
-                  <button
-                    onClick={() =>
-                      removeProject(idx)
-                    }
-                    style={{
-                      marginTop: "5px",
-                      background: "#fee2e2",
-                      color: "#b91c1c",
-                      padding:
-                        "5px 10px",
-                      borderRadius:
-                        "999px",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize:
-                        "0.8rem",
-                    }}
-                  >
-                    Slett prosjekt
-                  </button>
+                  ))
+                ) : (
+                  <span>Ingen treff</span>
                 )}
               </div>
-            ))}
 
-            <div
+              <h3 style={{ marginTop: "1rem" }}>Manglende skills</h3>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                {analysis.missingSkills.length > 0 ? (
+                  analysis.missingSkills.map((s) => (
+                    <span
+                      key={s}
+                      style={{
+                        background: "rgba(239,68,68,0.3)",
+                        padding: "4px 8px",
+                        borderRadius: "999px",
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))
+                ) : (
+                  <span>Ingen mangler</span>
+                )}
+              </div>
+            </section>
+
+            {/* PROSJEKT INPUT */}
+            <section
               style={{
-                display: "flex",
-                gap: "0.75rem",
-                alignItems: "center",
-                marginTop: "0.5rem",
+                background: "rgba(255,255,255,0.1)",
+                padding: "1.5rem",
+                borderRadius: "16px",
+                marginBottom: "1.5rem",
               }}
             >
+              <h2>Steg 3: Prosjekter</h2>
+
+              {projects.map((p, idx) => (
+                <div key={idx} style={{ marginBottom: "1rem" }}>
+                  <textarea
+                    placeholder="Beskriv prosjektet..."
+                    value={p}
+                    onChange={(e) => updateProject(idx, e.target.value)}
+                    style={{
+                      width: "100%",
+                      minHeight: "100px",
+                      borderRadius: "10px",
+                      padding: "10px",
+                    }}
+                  />
+
+                  {projects.length > 1 && (
+                    <button
+                      onClick={() => removeProject(idx)}
+                      style={{
+                        background: "#dc2626",
+                        color: "white",
+                        border: "none",
+                        padding: "4px 10px",
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Fjern prosjekt
+                    </button>
+                  )}
+                </div>
+              ))}
+
               <button
                 onClick={addProject}
                 style={{
                   background: "#16a34a",
-                  color: "#fff",
-                  padding: "8px 12px",
+                  padding: "6px 12px",
                   borderRadius: "999px",
                   border: "none",
+                  color: "white",
                   cursor: "pointer",
-                  fontSize: "0.9rem",
+                  marginRight: "8px",
                 }}
               >
                 + Legg til prosjekt
@@ -565,114 +338,68 @@ function App() {
               <button
                 onClick={handleInterview}
                 style={{
-                  padding: "9px 16px",
+                  background: "linear-gradient(135deg,#f97316,#ea580c)",
+                  padding: "8px 14px",
                   borderRadius: "999px",
                   border: "none",
-                  background:
-                    "linear-gradient(135deg,#f97316,#ea580c)",
-                  color: "#fff",
                   cursor: "pointer",
-                  fontSize: "0.9rem",
+                  color: "white",
                 }}
               >
                 Tren til intervju
               </button>
-            </div>
-          </section>
+            </section>
+          </>
         )}
 
-        {/* SCENE 4 – Intervjutrening */}
+        {/* INTERVJU */}
         {hasStarted && interview && (
           <section
             style={{
-              background: "#ffffff",
-              borderRadius: "18px",
-              padding: "1.5rem 1.75rem 2rem",
-              boxShadow:
-                "0 10px 25px rgba(15, 23, 42, 0.06)",
+              background: "rgba(255,255,255,0.1)",
+              padding: "1.5rem",
+              borderRadius: "16px",
             }}
           >
-            <h2
-              style={{
-                marginTop: 0,
-                marginBottom: "1rem",
-                fontSize: "1.15rem",
-              }}
-            >
-              Steg 4: Intervjutrening
-            </h2>
+            <h2>Intervjutrening</h2>
 
-            {(interview.questions || []).map(
-              (q, idx) => (
+            {interview.questions?.map((q, idx) => (
+              <div
+                key={idx}
+                style={{
+                  marginBottom: "1.5rem",
+                  background: "rgba(255,255,255,0.05)",
+                  padding: "1rem",
+                  borderRadius: "12px",
+                }}
+              >
+                <strong>{q}</strong>
+
                 <div
-                  key={idx}
                   style={{
-                    marginBottom: "1.75rem",
-                    padding: "1rem 1rem 1.1rem",
-                    borderRadius: "16px",
-                    border:
-                      "1px solid #e5e7eb",
-                    background: "#fafafa",
+                    background: "rgba(99,102,241,0.3)",
+                    padding: "0.75rem",
+                    borderRadius: "8px",
+                    marginTop: "0.5rem",
+                    marginBottom: "0.5rem",
                   }}
                 >
-                  <p
-                    style={{
-                      marginTop: 0,
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    <strong>{q}</strong>
-                  </p>
-
-                  <div
-                    style={{
-                      background: "#eff6ff",
-                      padding: "0.75rem 0.8rem",
-                      borderRadius: "10px",
-                      fontSize: "0.92rem",
-                      marginBottom: "0.8rem",
-                      borderLeft:
-                        "4px solid #2563eb",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        marginBottom: "0.25rem",
-                        textTransform:
-                          "uppercase",
-                        letterSpacing:
-                          "0.04em",
-                        color: "#1d4ed8",
-                      }}
-                    >
-                      Coachingsvar
-                    </div>
-                    {interview.answers?.[idx]}
-                  </div>
-
-                  <textarea
-                    placeholder="Hvordan ville du svart på dette intervjuet?"
-                    value={userAnswers[idx] || ""}
-                    onChange={(e) =>
-                      updateUserAnswer(
-                        idx,
-                        e.target.value
-                      )
-                    }
-                    style={{
-                      width: "100%",
-                      minHeight: "80px",
-                      borderRadius: "10px",
-                      border: "1px solid #d4d4d8",
-                      padding: "9px 11px",
-                      fontSize: "0.95rem",
-                    }}
-                  />
+                  {interview.answers?.[idx]}
                 </div>
-              )
-            )}
+
+                <textarea
+                  value={userAnswers[idx] || ""}
+                  onChange={(e) => updateUserAnswer(idx, e.target.value)}
+                  placeholder="Hvordan ville du svart?"
+                  style={{
+                    width: "100%",
+                    minHeight: "80px",
+                    borderRadius: "10px",
+                    padding: "10px",
+                  }}
+                />
+              </div>
+            ))}
           </section>
         )}
       </div>
