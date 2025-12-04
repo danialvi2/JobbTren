@@ -1,0 +1,53 @@
+### Python ###
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+.env
+venv/
+env/
+.python-version
+
+### Flask ###
+instance/
+*.sqlite
+*.db
+
+### Logs ###
+*.log
+
+### macOS ###
+.DS_Store
+
+### Node / React ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+
+### React Dev Server ###
+.cache/
+.eslintcache
+
+### Images / Uploads ###
+uploads/
+tmp/
+
+### VSCode ###
+.vscode/
+
+### JetBrains ###
+*.idea
+
+# Node
+frontend/node_modules
+
+# Python
+python/.venv
+
+
+
