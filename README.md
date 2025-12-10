@@ -56,11 +56,14 @@ Match-scoren er altså en kombinasjon av:
 ---
 
 
+<img width="937" height="473" alt="jobbtren1" src="https://github.com/user-attachments/assets/d274cfad-bf50-4acd-b0df-9825bbe6b20f" />
 
-<img width="863" height="341" alt="jobbtren1" src="https://github.com/user-attachments/assets/2b11de1f-611a-49cd-82a9-71738012e145" />
+<img width="628" height="451" alt="jobbtren2" src="https://github.com/user-attachments/assets/740423d7-fd03-4908-bfd2-466b4a944cbd" />
+
+<img width="625" height="386" alt="jobbtren3" src="https://github.com/user-attachments/assets/f8ec1ebb-7187-4cb8-b435-363e9e4a4aa6" />
 
 
-<img width="664" height="940" alt="jobbtren2" src="https://github.com/user-attachments/assets/7f5970d9-a153-45fd-a988-2423a4f51483" />
+
 
 
 ---
