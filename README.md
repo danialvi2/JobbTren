@@ -54,11 +54,13 @@ Match-scoren er altså en kombinasjon av:
 - hvor godt din erfaring i år står i forhold til kravene i annonsen.
 
 ---
-![jobbtren1.png](uploads/jobbtren1.png)
-
-![jobbtren2.png](uploads/jobbtren2.png)
 
 
+
+<img width="863" height="341" alt="jobbtren1" src="https://github.com/user-attachments/assets/2b11de1f-611a-49cd-82a9-71738012e145" />
+
+
+<img width="664" height="940" alt="jobbtren2" src="https://github.com/user-attachments/assets/7f5970d9-a153-45fd-a988-2423a4f51483" />
 
 
 ---
